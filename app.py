@@ -27,7 +27,7 @@ with app.app_context():
 @app.route('/add-prompt', methods=['POST'])
 def add_prompt():
     data = request.get_json()  # Get the data from the request
-    
+
     # Extract values from the JSON body
     subject = data.get('subject')
     curriculum = data.get('curriculum')
@@ -38,7 +38,19 @@ def add_prompt():
     # Validate if all required fields are provided
     if not subject or not curriculum or not education_level or not language or not prompt:
         return jsonify({'error': 'All fields are required'}), 400
-    
+
+    # Check for duplicate record
+    existing_prompt = Prompt.query.filter_by(
+        subject=subject,
+        curriculum=curriculum,
+        education_level=education_level,
+        language=language,
+        prompt=prompt
+    ).first()
+
+    if existing_prompt:
+        return jsonify({'error': 'Duplicate entry: This prompt already exists'}), 409
+
     # Create a new Prompt record
     new_prompt = Prompt(
         subject=subject,
@@ -47,7 +59,7 @@ def add_prompt():
         language=language,
         prompt=prompt
     )
-    
+
     # Add to session and commit to the database
     db.session.add(new_prompt)
     db.session.commit()
